@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { GoogleGenAI, Type } from "@google/genai";
-import { Loader2, Check, ChefHat, ShoppingCart, Calendar, ArrowRight, RefreshCcw, Info, Flame, Leaf, Utensils } from "lucide-react";
+import { Loader2, Check, ChefHat, ShoppingCart, Calendar, ArrowRight, RefreshCcw, Info, Flame, Leaf, Utensils, AlertCircle } from "lucide-react";
 
 // --- Utilities ---
 
@@ -38,20 +38,26 @@ const getFoodImage = (name: string, tags: string[]) => {
     noodle: "https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=800&q=80",
     rice: "https://images.unsplash.com/photo-1516685018646-549198525c1b?auto=format&fit=crop&w=800&q=80",
     spicy: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=800&q=80",
+    tomato: "https://images.unsplash.com/photo-1592187270271-9a4b84faa228?auto=format&fit=crop&w=800&q=80",
+    potato: "https://images.unsplash.com/photo-1518977676601-b53f82a6b6dc?auto=format&fit=crop&w=800&q=80",
+    braised: "https://images.unsplash.com/photo-1473093226795-af9932fe5856?auto=format&fit=crop&w=800&q=80",
   };
 
   if (n.includes("鱼") || n.includes("fish")) return images.fish;
   if (n.includes("虾") || n.includes("shrimp")) return images.shrimp;
   if (n.includes("牛") || n.includes("beef")) return images.beef;
-  if (n.includes("排骨") || n.includes("肉") || n.includes("pork")) return images.pork;
+  if (n.includes("排骨") || n.includes("肉") || n.includes("pork") || n.includes("红烧")) return images.pork;
   if (n.includes("鸡") || n.includes("chicken")) return images.chicken;
   if (n.includes("鸭") || n.includes("duck")) return images.duck;
   if (n.includes("豆腐") || n.includes("tofu")) return images.tofu;
   if (n.includes("蛋") || n.includes("egg")) return images.egg;
   if (n.includes("汤") || n.includes("soup")) return images.soup;
   if (n.includes("面") || n.includes("noodle")) return images.noodle;
+  if (n.includes("西红柿") || n.includes("番茄") || n.includes("tomato")) return images.tomato;
+  if (n.includes("土豆") || n.includes("potato")) return images.potato;
   if (t.includes("salad") || t.includes("凉拌")) return images.salad;
   if (t.includes("spicy") || t.includes("辣")) return images.spicy;
+  if (t.includes("braised") || t.includes("炖")) return images.braised;
 
   // Default fallback
   return "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80";
@@ -75,6 +81,11 @@ const App = () => {
   const ai = new GoogleGenAI({ apiKey });
 
   const fetchRecommendations = async () => {
+    if (!apiKey) {
+      setError("未检测到 API Key。请在部署环境配置 API_KEY 环境变量。");
+      return;
+    }
+
     setLoading(true);
     setLoadingMessage("正在为您挑选适合减脂的家常菜...");
     setError(null);
@@ -132,7 +143,7 @@ const App = () => {
       setStep("selection");
     } catch (err) {
       console.error(err);
-      setError("获取推荐失败，请重试。");
+      setError("获取推荐失败，请检查网络或 API 配置。");
     } finally {
       setLoading(false);
     }
@@ -143,6 +154,7 @@ const App = () => {
     
     setLoading(true);
     setLoadingMessage("正在根据您的选择规划下周食谱...");
+    setError(null);
     setStep("planning");
     
     try {
@@ -200,6 +212,7 @@ const App = () => {
         
         Task 1: Generate a consolidated shopping list.
         Task 2: Provide simple, beginner-friendly recipes for EVERY unique MAIN dish and SIDE dish mentioned in the plan.
+        Keep steps concise and clear.
         
         Return JSON object:
         {
@@ -302,11 +315,22 @@ const App = () => {
             <ChefHat className="w-10 h-10 text-emerald-600" />
           </div>
           <h1 className="text-3xl font-extrabold text-emerald-900 mb-3">周度减脂晚餐规划</h1>
-          <p className="text-emerald-800/80 mb-8 leading-relaxed font-medium">
+          <p className="text-emerald-800/80 mb-6 leading-relaxed font-medium">
             不知道下周吃什么？<br/>
             专为厨艺小白设计，简单食材，健康低脂。<br/>
             选择您心仪的菜品，剩下的交给我们。
           </p>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm flex items-start gap-3 border border-red-100 text-left animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" />
+              <div>
+                <span className="font-bold block mb-1">出错了</span>
+                {error}
+              </div>
+            </div>
+          )}
+
           <button 
             onClick={fetchRecommendations}
             className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-emerald-200/50 transition-all flex items-center justify-center gap-2 transform hover:scale-[1.02]"
